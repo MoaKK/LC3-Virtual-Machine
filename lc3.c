@@ -230,6 +230,12 @@ int main(int argc, const char *argv[])
 			update_flags(r0);
 			break;
 		case OP_BR:
+			uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+			uint16_t cond_flag = (instr >> 9) & 0x7;
+			if (cond_flag & reg[R_COND])
+			{
+				reg[R_PC] += pc_offset;
+			}
 			break;
 		case OP_JMP:
 			break;
