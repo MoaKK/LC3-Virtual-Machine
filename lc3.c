@@ -79,7 +79,7 @@ enum
 	FL_POS = 1 << 0, /* P */
 	FL_ZRO = 1 << 1, /* Z */
 	FL_NEG = 1 << 2, /* N */
-}
+};
 
 /* Main Loop */
 
@@ -111,8 +111,7 @@ c) Execute
 	•	When a HALT trap (TRAP x25) is hit,
 	the program sets running = 0 to stop the loop and clean up before exiting.*/
 
-int
-main(int argc, const char *argv[])
+int main(int argc, const char *argv[])
 {
 	/* Load Arguments */
 	if (argc < 2)
@@ -126,7 +125,7 @@ main(int argc, const char *argv[])
 		if (!read_image(argv[j]))
 		{
 			printf("failed to load image %s\n", argv[j]);
-			exit(1)
+			exit(1);
 		}
 	}
 
@@ -143,23 +142,26 @@ main(int argc, const char *argv[])
 	If we don’t set one, then when the program tries to do something like BRz (branch if zero),
 	it might behave unpredictably because the flags aren’t defined.
 	*/
-	reg[R_COND] = FL_ZRO
+	reg[R_COND] = FL_ZRO;
 
-			/* 0x3000 is a memory address, written in hexadecimal (base 16).
-			It’s just the conventional starting point where LC-3 programs are loaded before they run.
+	/* 0x3000 is a memory address, written in hexadecimal (base 16).
+	It’s just the conventional starting point where LC-3 programs are loaded before they run.
 
-			Here’s what it means:
-		•	The LC-3 memory goes from address 0x0000 to 0xFFFF (65,536 locations total).
-		•	The operating system or system data would usually occupy the lower addresses.
-		•	User programs are loaded starting at 0x3000 by default.
+	Here’s what it means:
+•	The LC-3 memory goes from address 0x0000 to 0xFFFF (65,536 locations total).
+•	The operating system or system data would usually occupy the lower addresses.
+•	User programs are loaded starting at 0x3000 by default.
 
-			So when we write:
-			reg[R_PC] = 0x3000;
-			we’re telling the CPU:
-			“Start fetching and executing instructions from memory location 0x3000.”
+	So when we write:
+	reg[R_PC] = 0x3000;
+	we’re telling the CPU:
+	“Start fetching and executing instructions from memory location 0x3000.”
 
-			That’s why it’s called the starting position — it’s where your LC-3 program begins its first instruction. */
-			enum { PC_START = 0x3000 };
+	That’s why it’s called the starting position — it’s where your LC-3 program begins its first instruction. */
+	enum
+	{
+		PC_START = 0x3000
+	};
 	reg[R_PC] = PC_START;
 
 	int running = 1;
@@ -181,7 +183,7 @@ main(int argc, const char *argv[])
 		switch (op)
 		{
 		case OP_ADD:
-		{
+
 			/* destination register (DR) */
 			uint16_t r0 = (instr >> 9) & 0x7;
 			/* first operand (SR1) */
@@ -200,10 +202,11 @@ main(int argc, const char *argv[])
 				reg[r0] = reg[r1] + reg[r2];
 			}
 
-			update_flags(r0)
-		}
-		break;
+			update_flags(r0);
+
+			break;
 		case OP_AND:
+
 			break;
 		case OP_NOT:
 			break;
@@ -216,6 +219,14 @@ main(int argc, const char *argv[])
 		case OP_LD:
 			break;
 		case OP_LDI:
+			/* Destination register */
+			uint16_t r0 = (instr >> 9) & 0x7;
+			/* PCoffset 9 */
+			uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+			/* add pc_offset to the current PC, look at that memory location to get the final address */
+			reg[r0] = mem_read(mem_read(reg[R_PC] + pc_offset));
+			update_flags(r0);
+
 			break;
 		case OP_LDR:
 			break;
