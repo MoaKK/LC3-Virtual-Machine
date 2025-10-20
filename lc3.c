@@ -326,3 +326,20 @@ void update_flags(uint16_t r)
 		reg[R_COND] = FL_POS;
 	}
 }
+
+/* Trap codes
+The LC-3 provides a few predefined routines for performing common tasks and interacting with I/O devices.
+For example, there are routines for getting input from the keyboard and for displaying strings to the console.
+These are called trap routines which you can think of as the operating system or API for the LC-3.
+Each trap routine is assigned a trap code which identifies it (similar to an opcode).
+To execute one, the TRAP instruction is called with the trap code of the desired routine.
+*/
+enum
+{
+    TRAP_GETC = 0x20,  /* get character from keyboard, not echoed onto the terminal */
+    TRAP_OUT = 0x21,   /* output a character */
+    TRAP_PUTS = 0x22,  /* output a word string */
+    TRAP_IN = 0x23,    /* get character from keyboard, echoed onto the terminal */
+    TRAP_PUTSP = 0x24, /* output a byte string */
+    TRAP_HALT = 0x25   /* halt the program */
+};
