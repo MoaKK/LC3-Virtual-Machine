@@ -1,0 +1,10 @@
+# VS Code settings
+.vscode/
+
+# Build artifacts
+lc3-vm
+*.o
+*.out
+
+# macOS system files
+.DS_Store
