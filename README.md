@@ -13,9 +13,9 @@ programs - Programs like 2048 and Rogue
 
 ## Running the VM
 
-You can now build and run the LC-3 Virtual Machine!
+### 1. Clone the repo
 
-#### 1. Compile the VM
+#### 2. Compile the VM
 Use your C compiler to build the executable:
 ```bash
 gcc lc3-vm.c -o lc3-vm
