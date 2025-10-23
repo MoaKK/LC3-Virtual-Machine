@@ -1,5 +1,14 @@
+#include <stdio.h>
 #include <stdint.h>
-#include <cstdio>
+#include <signal.h>
+/* unix only */
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/termios.h>
+#include <sys/mman.h>
 
 /* Memory Storage */
 
@@ -158,7 +167,7 @@ int main(int argc, const char *argv[])
 	we’re telling the CPU:
 	“Start fetching and executing instructions from memory location 0x3000.”
 
-	That’s why it’s called the starting position — it’s where your LC-3 program begins its first instruction. */
+	That’s why it’s called the starting position, it’s where your LC-3 program begins its first instruction. */
 	enum
 	{
 		PC_START = 0x3000
@@ -300,7 +309,7 @@ int main(int argc, const char *argv[])
 			uint16_t offset = sign_extend(instr & 0x3F, 6);
 			mem_write(reg[r1] + offset, reg[r0]);
 			break;
-		case OP_TRAP: /* Scroll down for explanations on trap routines*/
+		case OP_TRAP: /* There is a TrapRoutines.md for further explanation on trap routines */
 			reg[R_R7] = reg[R_PC];
 
 			switch (instr & 0xFF)
@@ -396,3 +405,68 @@ enum
 	TRAP_PUTSP = 0x24, /* output a byte string */
 	TRAP_HALT = 0x25	 /* halt the program */
 };
+
+/* Loading */
+
+void read_image_file(FILE* file)
+{
+    /* the origin tells us where in memory to place the image */
+    uint16_t origin;
+    fread(&origin, sizeof(origin), 1, file);
+    origin = swap16(origin);
+
+    /* we know the maximum file size so we only need one fread */
+    uint16_t max_read = MEMORY_MAX - origin;
+    uint16_t* p = memory + origin;
+    size_t read = fread(p, sizeof(uint16_t), max_read, file);
+
+    /* swap to little endian */
+    while (read-- > 0)
+    {
+        *p = swap16(*p);
+        ++p;
+    }
+}
+
+uint16_t swap16(uint16_t x)
+{
+    return (x << 8) | (x >> 8);
+}
+
+int read_image(const char* image_path)
+{
+    FILE* file = fopen(image_path, "rb");
+    if (!file) { return 0; };
+    read_image_file(file);
+    fclose(file);
+    return 1;
+}
+
+
+/* Platform specifics, Linux/macOS/UNIX*/
+struct termios original_tio;
+
+void disable_input_buffering()
+{
+    tcgetattr(STDIN_FILENO, &original_tio);
+    struct termios new_tio = original_tio;
+    new_tio.c_lflag &= ~ICANON & ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+}
+
+void restore_input_buffering()
+{
+    tcsetattr(STDIN_FILENO, TCSANOW, &original_tio);
+}
+
+uint16_t check_key()
+{
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(STDIN_FILENO, &readfds);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    return select(1, &readfds, NULL, NULL, &timeout) != 0;
+}
